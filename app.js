@@ -60,18 +60,19 @@ app.get("/", function (req, res) {
 app.post("/", function (req, res) {
 
   const itemName = req.body.newItem
+  const item = new Item({
+    name: itemName
+  })
 
   const listName= req.body.list;
 
   if(listName === "Today"){
-    new Item({
-      name: item
-    }).save()
+    item.save()
     res.redirect("/");
   }
   else{
     List.findOne({name:listName},function(err,foundList){
-      foundList.items.push(itemName);
+      foundList.items.push(item);
       foundList.save();
       res.redirect("/"+listName)
     })
@@ -90,10 +91,26 @@ app.post("/", function (req, res) {
 });
 
 app.post("/delete", function (req, res) {
-  Item.findByIdAndRemove(req.body.checkbox, function (err) {
-    if (!err) console.log("successfully deleted");
-  })
+
+  const listName = req.body.listName;
+  const checkedItemID =req.body.checkbox;
+
+  if(listName==="Today"){
+    Item.findByIdAndRemove(checkedItemID, function (err) {
+      if (!err) console.log("successfully deleted");
+    })
   res.redirect("/")
+  }
+  else{
+    List.findOneAndUpdate({name:listName},{$pull: {items: {_id:checkedItemID}}},function(err,foundList){
+      if(!err)
+      {
+        res.redirect("/"+listName);
+      }
+    })
+  }
+
+  
 });
 
 app.get("/:customList", function (req, res) {
